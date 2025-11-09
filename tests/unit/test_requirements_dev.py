@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import toml
+
 
 class TestRequirementsDev:
     """Test suite for requirements-dev.txt."""
@@ -119,7 +121,6 @@ class TestRequirementsDev:
             req_content = f.read()
 
         # Read pyproject.toml dev dependencies
-        import toml
 
         with pyproject_path.open("r", encoding="utf-8") as f:
             pyproject_content = toml.load(f)

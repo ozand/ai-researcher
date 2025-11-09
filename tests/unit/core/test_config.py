@@ -2,9 +2,10 @@
 
 import os
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 import yaml
 
 from src.core.config import Config, ConfigManager, DataConfig, EngineConfig, LLMConfig
@@ -48,7 +49,7 @@ class TestConfigManager:
             assert config.debug is True
             assert config.log_level == "DEBUG"
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
     def test_invalid_yaml_raises_error(self):
         """Test that invalid YAML raises ValueError."""
@@ -60,7 +61,7 @@ class TestConfigManager:
             with pytest.raises(ValueError, match="Invalid YAML"):
                 ConfigManager(temp_path)
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
     def test_invalid_llm_provider(self):
         """Test validation of invalid LLM provider."""
@@ -74,7 +75,7 @@ class TestConfigManager:
             with pytest.raises(ValueError, match="Unsupported LLM provider"):
                 ConfigManager(temp_path)
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
     def test_invalid_temperature_range(self):
         """Test validation of temperature range."""
@@ -88,7 +89,7 @@ class TestConfigManager:
             with pytest.raises(ValueError, match="temperature must be between 0 and 2"):
                 ConfigManager(temp_path)
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
     def test_invalid_mode(self):
         """Test validation of invalid mode."""
@@ -102,7 +103,7 @@ class TestConfigManager:
             with pytest.raises(ValueError, match="Invalid mode"):
                 ConfigManager(temp_path)
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
     def test_get_api_key(self):
         """Test getting API keys for different providers."""
@@ -139,19 +140,17 @@ class TestConfigManager:
         config_manager = ConfigManager()
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            config_manager.config.data.output_dir = os.path.join(temp_dir, "output")
-            config_manager.config.data.cache_dir = os.path.join(temp_dir, "cache")
-            config_manager.config.data.mindmap_csv_path = os.path.join(
-                temp_dir, "data", "test.csv"
+            config_manager.config.data.output_dir = str(Path(temp_dir) / "output")
+            config_manager.config.data.cache_dir = str(Path(temp_dir) / "cache")
+            config_manager.config.data.mindmap_csv_path = str(
+                Path(temp_dir) / "data" / "test.csv"
             )
 
             config_manager.ensure_directories()
 
-            assert os.path.exists(config_manager.config.data.output_dir)
-            assert os.path.exists(config_manager.config.data.cache_dir)
-            assert os.path.exists(
-                os.path.dirname(config_manager.config.data.mindmap_csv_path)
-            )
+            assert Path(config_manager.config.data.output_dir).exists()
+            assert Path(config_manager.config.data.cache_dir).exists()
+            assert Path(config_manager.config.data.mindmap_csv_path).parent.exists()
 
     def test_save_config(self):
         """Test saving configuration to file."""
@@ -166,7 +165,7 @@ class TestConfigManager:
             config_manager.save_config(temp_path)
 
             # Load and verify saved config
-            with open(temp_path) as f:
+            with Path(temp_path).open("r") as f:
                 saved_data = yaml.safe_load(f)
 
             assert saved_data["mode"] == "automatic"
@@ -174,7 +173,7 @@ class TestConfigManager:
             # API keys should not be saved
             assert "api_key" not in str(saved_data)
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
 
 class TestConfigDataclasses:

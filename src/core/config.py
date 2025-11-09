@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # type: ignore[import-not-found]
 
 
 @dataclass
@@ -66,7 +66,7 @@ class ConfigManager:
         self._load_config_file()
         self._validate_config()
 
-    def _load_environment(self):
+    def _load_environment(self) -> None:
         """Load environment variables from .env file."""
         # Try to load .env from project root and .taskmaster directory
         env_paths = [Path(".env"), Path(".taskmaster/.env"), Path("../.env")]
@@ -76,21 +76,23 @@ class ConfigManager:
                 load_dotenv(env_path)
                 break
 
-    def _load_config_file(self):
+    def _load_config_file(self) -> None:
         """Load configuration from YAML file."""
         config_file = Path(self.config_path)
         if config_file.exists():
             try:
-                with open(config_file, encoding="utf-8") as f:
+                with config_file.open("r", encoding="utf-8") as f:
                     config_data = yaml.safe_load(f)
                     if config_data:
                         self._update_config_from_dict(config_data)
             except yaml.YAMLError as e:
-                raise ValueError(f"Invalid YAML in config file {config_file}: {e}")
+                raise ValueError(
+                    f"Invalid YAML in config file {config_file}: {e}"
+                ) from e
             except Exception as e:
-                raise ValueError(f"Error loading config file {config_file}: {e}")
+                raise ValueError(f"Error loading config file {config_file}: {e}") from e
 
-    def _update_config_from_dict(self, config_data: dict[str, Any]):
+    def _update_config_from_dict(self, config_data: dict[str, Any]) -> None:
         """Update config object from dictionary."""
         if "llm" in config_data:
             llm_data = config_data["llm"]
@@ -115,7 +117,7 @@ class ConfigManager:
             if key in config_data:
                 setattr(self.config, key, config_data[key])
 
-    def _validate_config(self):
+    def _validate_config(self) -> None:
         """Validate configuration settings."""
         # Validate LLM config
         if self.config.llm.provider not in [
@@ -126,7 +128,11 @@ class ConfigManager:
         ]:
             raise ValueError(f"Unsupported LLM provider: {self.config.llm.provider}")
 
-        if self.config.llm.temperature < 0 or self.config.llm.temperature > 2:
+        MAX_TEMPERATURE = 2
+        if (
+            self.config.llm.temperature < 0
+            or self.config.llm.temperature > MAX_TEMPERATURE
+        ):
             raise ValueError("LLM temperature must be between 0 and 2")
 
         if self.config.llm.max_tokens <= 0:
@@ -172,7 +178,7 @@ class ConfigManager:
         if provider is None:
             provider = self.config.llm.provider
 
-        config = LLMConfig(
+        return LLMConfig(
             provider=provider,
             model=self.config.llm.model,
             api_key=self.get_api_key(provider),
@@ -182,9 +188,7 @@ class ConfigManager:
             timeout=self.config.llm.timeout,
         )
 
-        return config
-
-    def ensure_directories(self):
+    def ensure_directories(self) -> None:
         """Ensure required directories exist."""
         directories = [
             self.config.data.output_dir,
@@ -193,9 +197,9 @@ class ConfigManager:
         ]
 
         for directory in directories:
-            Path(directory).mkdir(parents=True, exist_ok=True)
+            Path(str(directory)).mkdir(parents=True, exist_ok=True)
 
-    def save_config(self, path: str | None = None):
+    def save_config(self, path: str | None = None) -> None:
         """Save current configuration to YAML file."""
         save_path = path or self.config_path
 
@@ -226,7 +230,7 @@ class ConfigManager:
         }
 
         # Remove None values and API keys from saved config
-        def clean_dict(d):
+        def clean_dict(d: Any) -> Any:
             if isinstance(d, dict):
                 return {
                     k: clean_dict(v)
@@ -237,7 +241,7 @@ class ConfigManager:
 
         cleaned_dict = clean_dict(config_dict)
 
-        with open(save_path, "w", encoding="utf-8") as f:
+        with Path(save_path).open("w", encoding="utf-8") as f:
             yaml.dump(cleaned_dict, f, default_flow_style=False, indent=2)
 
 
