@@ -107,7 +107,8 @@ split-on-trailing-comma = false
 [[tool.mypy.overrides]]
 module = [
     "tests.unit.test_pyproject_config",
-    "tests.unit.test_precommit_config"
+    "tests.unit.test_precommit_config",
+    "tests.unit.test_requirements_dev"
 ]
 ignore_errors = true
 
