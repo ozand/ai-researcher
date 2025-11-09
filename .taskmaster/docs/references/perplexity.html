@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Промпт-конструктор</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f9; color: #333; line-height: 1.6;
+            margin: 0; padding: 20px;
+        }
+        .container {
+            max-width: 900px; margin: 20px auto; background: #fff;
+            padding: 25px 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #2c3e50; margin: 0;
+        }
+        h2 {
+            color: #34495e; font-size: 1.4em; margin-top: 0; margin-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1; padding-bottom: 10px;
+        }
+        label {
+            display: block; font-weight: bold; margin-bottom: 8px; color: #555;
+        }
+        hr {
+            border: none; border-top: 2px solid #eee; margin: 40px 0;
+        }
+        /* Стили элементов */
+        #resetButton {
+            background-color: #6c757d; color: white; border: none; padding: 10px 18px;
+            border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #resetButton:hover { background-color: #5a6268; }
+        select {
+            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;
+            font-size: 16px; margin-bottom: 15px; background-color: #fff;
+        }
+        details {
+            border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px;
+        }
+        summary {
+            font-weight: bold; padding: 10px; cursor: pointer; background-color: #f9f9f9;
+        }
+        pre {
+            background-color: #fafafa; padding: 15px; white-space: pre-wrap;
+            word-wrap: break-word; font-size: 13px; max-height: 300px; overflow-y: auto;
+        }
+        textarea {
+            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px;
+            font-size: 14px; line-height: 1.5; box-sizing: border-box; margin-bottom: 20px;
+            font-family: 'Courier New', Courier, monospace; height: 250px; resize: vertical;
+            background-color: #fafafa;
+        }
+        .copy-btn {
+            background-color: #3498db; color: white; border: none; padding: 8px 12px;
+            border-radius: 5px; cursor: pointer; font-size: 14px; display: inline-flex;
+            align-items: center; gap: 8px; transition: background-color 0.3s ease; white-space: nowrap;
+        }
+        .copy-btn:hover { background-color: #2980b9; }
+        .copy-btn svg { width: 16px; height: 16px; fill: currentColor; }
+        .copy-btn.copied { background-color: #6c757d; }
+        .prompt-row.copied { background-color: #e8f5e9; border-left-color: #4CAF50; }
+        .rows-container { display: flex; flex-direction: column; gap: 12px; }
+        .prompt-row {
+            display: flex; justify-content: space-between; align-items: center; padding: 10px;
+            background-color: #f9f9f9; border: 1px solid #eee; border-left: 4px solid transparent;
+            border-radius: 5px; gap: 15px; transition: background-color 0.3s ease, border-left-color 0.3s ease;
+        }
+        .prompt-text { flex-grow: 1; font-family: sans-serif; font-size: 15px; color: #333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-header">
+            <h1>Промпт-конструктор</h1>
+            <button id="resetButton" title="Очистить все поля и сбросить статусы">Сбросить всё</button>
+        </div>
+
+        <section>
+            <h2>Этап 1: Выберите шаблон промпта</h2>
+            <label for="templateSelector">Тип шаблона:</label>
+            <select id="templateSelector"></select>
+            <details>
+                <summary>Показать/скрыть текст шаблона</summary>
+                <pre><code id="templatePreview"></code></pre>
+            </details>
+        </section>
+
+        <hr>
+
+        <section>
+            <h2>Этап 2: Вставьте запросы и скопируйте готовые промпты</h2>
+            <label for="mainQueriesInput">Сгенерированные запросы (формат: 3.1 "текст"):</label>
+            <textarea id="mainQueriesInput" placeholder='3.1 "what is the primary bottleneck..."'></textarea>
+            <div id="mainRowsContainer" class="rows-container"></div>
+        </section>
+
+        <hr>
+
+        <section>
+            <label for="nextLevelQueriesInput">"Next-Level Questions" (формат: [1.1.1] текст):</label>
+            <textarea id="nextLevelQueriesInput" placeholder="[1.1.1] Ваш первый вопрос..."></textarea>
+            <div id="nextLevelRowsContainer" class="rows-container"></div>
+        </section>
+    </div>
+
+    <script>
+        // --- ОБЩИЕ ПЕРЕМЕННЫЕ И ШАБЛОНЫ ---
+        const placeholderText = '[**СЮДА ВСТАВЬТЕ ВАШ ЗАПРОС ОТ HIERARCHICAL QUERY DECOMPOSER**]';
+        const copyIconSvg = `<svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg> Копировать`;
+
+        const templates = {
+            researchDossier: {
+                name: "Research Dossier",
+                content: `# PROMPT: GENERATE RESEARCH DOSSIER\n\n## 1. Core Research Query\n\n${placeholderText}\n\n---\n\n## 2. Perplexity-Specific Instructions\n\n- **FOCUS MODE:** Academic\n- **ACTION:** Generate a comprehensive, structured research dossier based on the Core Research Query.\n- **TONE:** Analytical, structured, objective, and insightful.\n\n---\n\n## 3. Mandated Research Workflow\n\nBefore writing the final dossier, execute the following internal research steps based on your search findings:\n\n1. **Define and Deconstruct:**\n    - What is the core definition of the subject?\n    - What are its fundamental components, principles, or key features?\n2. **Analyze Implications ("So What?"):**\n    - What are the direct consequences or benefits of each key component?\n    - Why is this subject important in its context? What value does it create?\n3. **Identify Stakeholders:**\n    - Who are the primary groups or roles involved with this subject (e.g., users, developers, customers, decision-makers)?\n    - What is the perspective of each stakeholder group? What are their gains and pains?\n4. **Synthesize Findings:**\n    - Consolidate all gathered information to prepare for the structured output defined below.\n\n---\n\n## 4. Mandated Dossier Structure (Final Output)\n\nYour final output **MUST** be a single, well-structured Markdown document. Adhere strictly to the following format and headings:\n\n### **Research Dossier: [Topic Title Based on Query]**\n\n#### **Executive Summary**\n\n*A brief, one-paragraph synthesis of the most critical findings and the answer to the core query.*\n\n---\n\n#### **1. Deconstruction & Core Components**\n\n*Provide a detailed breakdown of the subject. Use a list to describe each key component, feature, or principle identified during your research.*\n\n- **Component 1:** [Description and details]\n- **Component 2:** [Description and details]\n- ...\n\n---\n\n#### **2. Analysis of Implications and Value ("So What?")**\n\n*For each key component, explain its significance, value, and practical implications. Answer the question, "Why does this matter?"*\n\n- **Implication of Component 1:** [Analysis]\n- **Implication of Component 2:** [Analysis]\n- ...\n\n---\n\n#### **3. Stakeholder Perspectives**\n\n*Create a table or a list that outlines the key stakeholders, their goals, and their perspectives (positive or negative) regarding the subject.*\n\n| Stakeholder | Perspective & Key Interests |\n| :--- | :--- |\n| **[e.g., End-Users]** | [e.g., Cares about ease of use, functionality, and price.] |\n| **[e.g., Developers]** | [e.g., Cares about extensibility, API quality, and documentation.] |\n| ... | ... |\n\n---\n\n#### **4. Synthesis & Strategic Outlook**\n\n*Provide a concluding analysis. What are the overall strengths and weaknesses? What future trends might affect this subject? Where does it fit in the broader landscape?*\n\n---\n\n#### **5. Next-Level Questions**\n\n*Based on your research, generate 3-5 insightful, hierarchical questions for the next cycle of investigation. These should be deeper questions that emerged from the current analysis.*\n\n- **[1.1.1]** [Generated Question 1]\n- **[1.1.2]** [Generated Question 2]\n- ...`
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- ЭЛЕМЕНТЫ DOM ---
+            const templateSelector = document.getElementById('templateSelector');
+            const templatePreview = document.getElementById('templatePreview');
+            const resetButton = document.getElementById('resetButton');
+
+            const mainQueriesInput = document.getElementById('mainQueriesInput');
+            const mainRowsContainer = document.getElementById('mainRowsContainer');
+            const nextLevelQueriesInput = document.getElementById('nextLevelQueriesInput');
+            const nextLevelRowsContainer = document.getElementById('nextLevelRowsContainer');
+
+            // --- УНИВЕРСАЛЬНЫЕ ФУНКЦИИ ---
+            function showCopyFeedback(button) {
+                const originalText = button.innerHTML;
+                button.textContent = 'Скопировано!';
+                button.disabled = true;
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }, 1500);
+            }
+
+            function renderPromptRows(config) {
+                const { inputElement, containerElement, regex } = config;
+                containerElement.innerHTML = '';
+                const lines = inputElement.value.split('\n').filter(line => line.trim() !== '');
+
+                lines.forEach(line => {
+                    const fullLineToCopy = line.trim();
+                    const match = fullLineToCopy.match(regex);
+                    const displayText = match ? match[1].trim() : null;
+
+                    if (!displayText) return;
+
+                    const row = document.createElement('div');
+                    row.className = 'prompt-row';
+
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'prompt-text';
+                    textSpan.textContent = displayText;
+
+                    const button = document.createElement('button');
+                    button.className = 'copy-btn';
+                    button.innerHTML = copyIconSvg;
+
+                    button.addEventListener('click', () => {
+                        const selectedTemplateKey = templateSelector.value;
+                        const currentTemplate = templates[selectedTemplateKey].content;
+                        const promptToCopy = currentTemplate.replace(placeholderText, fullLineToCopy);
+
+                        navigator.clipboard.writeText(promptToCopy).then(() => {
+                            showCopyFeedback(button);
+                            row.classList.add('copied');
+                            button.classList.add('copied');
+                        }).catch(err => console.error('Ошибка копирования:', err));
+                    });
+
+                    row.appendChild(textSpan);
+                    row.appendChild(button);
+                    containerElement.appendChild(row);
+                });
+            }
+
+            // --- УПРАВЛЕНИЕ ШАБЛОНАМИ И СБРОС ---
+            function populateTemplateSelector() {
+                for (const key in templates) {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = templates[key].name;
+                    templateSelector.appendChild(option);
+                }
+            }
+
+            function updateTemplateView() {
+                const selectedKey = templateSelector.value;
+                templatePreview.textContent = templates[selectedKey].content;
+            }
+
+            function resetAll() {
+                // Очищаем поля ввода
+                mainQueriesInput.value = '';
+                nextLevelQueriesInput.value = '';
+                // Очищаем контейнеры с результатами
+                mainRowsContainer.innerHTML = '';
+                nextLevelRowsContainer.innerHTML = '';
+            }
+
+            // --- ИНИЦИАЛИЗАЦИЯ ИНСТРУМЕНТОВ И СОБЫТИЙ ---
+            populateTemplateSelector();
+            updateTemplateView();
+            templateSelector.addEventListener('change', updateTemplateView);
+            resetButton.addEventListener('click', resetAll);
+
+            const mainToolConfig = {
+                inputElement: mainQueriesInput,
+                containerElement: mainRowsContainer,
+                regex: /"(.*?)"/
+            };
+            mainToolConfig.inputElement.addEventListener('input', () => renderPromptRows(mainToolConfig));
+
+            const nextLevelToolConfig = {
+                inputElement: nextLevelQueriesInput,
+                containerElement: nextLevelRowsContainer,
+                regex: /^\[.*?\]\s*(.*)/
+            };
+            nextLevelToolConfig.inputElement.addEventListener('input', () => renderPromptRows(nextLevelToolConfig));
+        });
+    </script>
+</body>
+</html>

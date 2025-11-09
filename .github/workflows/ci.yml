@@ -1,0 +1,191 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  quality-checks:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v1
+
+    - name: Install dependencies
+      run: uv sync --dev
+
+    - name: Run Ruff linter
+      run: uv run ruff check . --no-fix
+
+    - name: Check Ruff formatting
+      run: uv run ruff format --check .
+
+    - name: Run mypy type checking
+      run: uv run mypy src/
+
+    - name: Run bandit security check
+      run: uv run bandit -r src/ -f json -o bandit-report.json || true
+
+    - name: Upload security scan results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-scan
+        path: bandit-report.json
+
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v1
+
+    - name: Install dependencies
+      run: uv sync --dev
+
+    - name: Run tests with coverage
+      run: |
+        uv run pytest --cov=src --cov-report=xml --cov-report=html --cov-report=term
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      if: matrix.python-version == '3.12'
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report-${{ matrix.python-version }}
+        path: htmlcov/
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [quality-checks, test]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v1
+
+    - name: Install dependencies
+      run: uv sync --dev
+
+    - name: Run integration tests
+      run: |
+        # Create test environment file
+        echo "GOOGLE_API_KEY=test_key" > .env
+        echo "OPENAI_API_KEY=test_key" >> .env
+
+        uv run pytest tests/integration/ -v
+
+    - name: Test configuration loading
+      run: |
+        uv run python -c "
+from src.core.config import ConfigManager
+try:
+    config = ConfigManager()
+    print('✅ Configuration loaded successfully')
+except Exception as e:
+    print(f'❌ Configuration failed: {e}')
+    exit(1)
+"
+
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    needs: [quality-checks, test]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v1
+
+    - name: Build package
+      run: uv build
+
+    - name: Check package
+      run: uv run twine check dist/*
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: python-package
+        path: dist/
+
+  performance-test:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: [integration-tests]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v1
+
+    - name: Install dependencies
+      run: uv sync --dev
+
+    - name: Run performance benchmarks
+      run: |
+        # Basic performance test
+        uv run python -c "
+import time
+from src.core.config import ConfigManager
+
+start_time = time.time()
+for i in range(100):
+    config = ConfigManager()
+end_time = time.time()
+
+print(f'Configuration loading: {100/(end_time-start_time):.2f} loads/sec')
+"

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "task-master-ai": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "task-master-ai",
+        "--package=task-master-ai",
+      ],
+      "enabled": true,
+      "environment": {
+        "TASK_MASTER_TOOLS": "all",
+        "GOOGLE_API_KEY": "AIzaSyCGqaQYTWB4LsBu13RBT2WKJEtGvgoM27k",
+        "OPENROUTER_API_KEY": "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",
+        "ZAI_API_KEY": "96f9078aa5b042539e7b345042cd574a.U7mKItCrFqcQyRwd"
+      }
+    },
+    "context7": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "environment": {
+        "CONTEXT7_API_KEY": "ctx7sk-d4b13a23-e56d-43ba-bea9-428833be8786"
+      },
+      "enabled": true
+    },
+  }
+}

@@ -1,0 +1,223 @@
+# PRD: Deep Research Pipeline Orchestrator (RPG Method)
+
+## 1\. Определение проблемы (Problem Definition)
+
+**Проблема:** Проведение глубоких, рекурсивных исследований на основе структурированной базы знаний (Mindmap) требует выполнения множества рутинных операций: переключение контекста между стратегированием, декомпозицией запросов, ручным поиском в внешних системах (Perplexity, Google Deep Research) и синтезом результатов. Ручной процесс плохо масштабируется и подвержен ошибкам.
+**Решение:** Python-оркестратор, который автоматизирует поток данных между этапами исследования. Система должна поддерживать гибкое переключение между LLM-провайдерами (Gemini, External API) и два режима работы: полуручной (человек как оператор поиска) и полностью автоматический (через API поисковых систем).
+
+## 2\. Функциональные возможности (Capabilities - The WHAT)
+
+### Capability 1: Core Infrastructure & Abstractions
+
+Фундаментальный слой для работы с различными LLM и конфигурациями.
+
+#### Feature 1.1: Unified LLM Client Interface
+
+Абстракция для переключения между Google Gemini API и другими провайдерами (OpenAI-compatible API).
+
+#### Feature 1.2: Configuration Management
+
+Управление настройками (API ключи, выбор режима работы, пути к файлам) через `.env` или `config.yaml`.
+
+### Capability 2: Knowledge Base Ingestion (Input)
+
+Загрузка исходных данных для исследований.
+
+#### Feature 2.1: Mindmap CSV Parser
+
+Чтение и валидация иерархического CSV файла (Level 1 -\> Level 5).
+
+### Capability 3: Research Stage Orchestration
+
+Основная логика выполнения этапов исследования (Stages 0-3).
+
+#### Feature 3.1: Strategy Generation (Stage 0)
+
+Интеграция с промтами "Strategist" для выбора ветки исследования.
+
+#### Feature 3.2: Query Decomposition (Stage 1)
+
+Превращение стратегии в список иерархических вопросов (1.1, 1.2...).
+
+#### Feature 3.3: Dossier Synthesis (Stage 2/3 LLM side)
+
+Генерация финального отчета на основе полученных результатов поиска.
+
+### Capability 4: Execution Engine (Dual Mode)
+
+Компонент, отвечающий за получение данных из внешнего мира.
+
+#### Feature 4.1: Semi-Manual Mode (Human-in-the-Loop)
+
+Интерфейс (CLI/TUI), который генерирует готовый промт для поисковика, ставит пайплайн на паузу и ждет, пока пользователь вставит результат поиска обратно.
+
+#### Feature 4.2: Automated API Mode (Future)
+
+Адаптер для прямой отправки запросов в Perplexity API (или аналоги), заменяющий ручной ввод-вывод.
+
+### Capability 5: Recursive Loop Management
+
+Автоматизация углубления исследования.
+
+#### Feature 5.1: Next-Step Extraction
+
+Парсинг сгенерированных досье для извлечения секции "Next-Level Questions".
+
+#### Feature 5.2: Recursion Queue
+
+Добавление новых вопросов в очередь задач для следующего цикла оркестрации.
+
+-----
+
+## 3\. Архитектура системы (System Architecture - The HOW)
+
+### Основные модули (Repository Structure)
+
+```
+/src
+    /core
+        llm_client.py       # Адаптеры для Gemini/OpenAI
+        config.py           # Управление конфигурацией
+    /data
+        kb_loader.py        # Загрузка CSV
+        storage.py          # Сохранение результатов (md/json)
+    /engine
+        orchestrator.py     # Главный цикл исследования
+        execution.py        # Интерфейс для Manual/API режимов
+        prompts.py          # Менеджер шаблонов промтов
+    /utils
+        parsers.py          # Парсинг ответов LLM (извлечение вопросов)
+```
+
+-----
+
+## 4\. Граф зависимостей (Dependency Graph)
+
+Здесь определено, в каком порядке должны реализовываться фичи. Стрелка `->` означает "зависит от".
+
+```mermaid
+graph TD
+    %% Foundation
+    C1_2[Config Mgmt] --> C1_1[Unified LLM Client]
+    C2_1[CSV Parser]
+
+    %% Core Engines depends on Foundation
+    C1_1 --> C3_1[Stage 0: Strategist]
+    C1_1 --> C3_2[Stage 1: Decomposer]
+    C1_1 --> C3_3[Dossier Synthesis]
+
+    %% Execution depends on Engines
+    C3_2 --> C4_1[Semi-Manual Mode]
+    C4_1 --> C4_2[Automated API Mode]
+
+    %% Recursion depends on Synthesis and Parsing
+    C3_3 --> C5_1[Next-Step Extraction]
+    C5_1 --> C5_2[Recursion Queue]
+
+    %% Orchestrator ties it all together
+    C2_1 --> Orch[Orchestrator]
+    C3_1 --> Orch
+    C4_1 --> Orch
+    C5_2 --> Orch
+```
+
+### Текстовое описание ключевых зависимостей:
+
+  * **Foundation Priority:** Нельзя начать работу без `Unified LLM Client` (нужен для всех стадий) и `Config Mgmt` (нужен для хранения ключей к LLM).
+  * **Manual First:** `Automated API Mode` (4.2) строго зависит от `Semi-Manual Mode` (4.1), так как сначала мы должны отладить логику работы с данными вручную, и только потом автоматизировать транспорт.
+  * **Recursion Last:** Рекурсия (5.x) реализуется только после того, как базовый прямой проход (Stages 0-\>3) работает стабильно.
+
+-----
+
+## 5\. План реализации (Implementation Phases)
+
+### Phase 0: Foundation (Days 1-2)
+
+*Цель: Настроить проект и базовые коммуникации.*
+
+1.  [F0.1] Инициализация репозитория, poetry/venv, структура папок.
+2.  [F0.2] Реализация `Config Management` (чтение .env).
+3.  [F0.3] Реализация `Unified LLM Client` с поддержкой заглушек (mock) и реального вызова Gemini API.
+4.  [F0.4] Базовый `CSV Parser` для чтения Mindmap.
+
+### Phase 1: Linear Semi-Manual Pipeline (Days 3-5)
+
+*Цель: Пройти от CSV до одного готового Досье с участием человека.*
+
+1.  [F1.1] Реализация `Prompt Manager` для загрузки ваших markdown-шаблонов (Stages 0, 1, 2, 3).
+2.  [F1.2] Реализация `Orchestrator` (v1): последовательный вызов Stage 0 и Stage 1.
+3.  [F1.3] Реализация `Semi-Manual Execution`: CLI-интерфейс, который выводит промт для Perplexity, ждет нажатия Enter, затем ждет вставки текста-ответа.
+4.  [F1.4] Интеграция всего вместе: CSV -\> Strategist -\> Decomposer -\> **Manual Search** -\> Dossier Synthesis -\> сохранение в файл.
+
+### Phase 2: Recursion Loop (Days 6-8)
+
+*Цель: Замкнуть цикл исследования.*
+
+1.  [F2.1] Разработка парсера для извлечения "Next-Level Questions" из финального markdown-досье.
+2.  [F2.2] Реализация очереди задач в `Orchestrator` для управления глубиной исследования (чтобы не уйти в бесконечный цикл).
+
+### Phase 3: Automation Upgrade (Days 9+)
+
+*Цель: Исключить человека из цикла там, где это возможно.*
+
+1.  [F3.1] Реализация `Automated API Mode`: добавление адаптера для Perplexity API (или аналогичного сервиса).
+2.  [F3.2] Обновление конфига для выбора режима работы (Manual/Auto).
+
+-----
+
+## 6\. Стратегия тестирования (Test Strategy)
+
+  * **Unit Tests:** Обязательное тестирование парсеров (CSV и особенно парсера Досье для рекурсии), так как LLM могут выдавать нестабильный формат.
+  * **Integration Tests (Mocked):** Тестирование всего пайплайна с использованием "замоканного" LLM-клиента, который возвращает заранее заготовленные ответы. Это позволит отлаживать логику оркестрации без траты денег/токенов.
+  * **User Acceptance Testing (Phase 1):** Проверка удобства полуручного режима — насколько легко копировать большие промты и вставлять большие ответы в терминал.
+
+
+---
+---
+Чтобы PRD стал полностью автономным и понятным для любой системы AI-разработчиков без контекста нашего разговора, к нему необходимо приложить **полный пакет исходных материалов**, на которые он ссылается.
+
+Вот список документов, которые должны быть в "папке проекта" вместе с PRD:
+
+### 1\. База Знаний (Knowledge Base)
+
+  * **`mindmap_table-ai_and_its_applications.csv`**: Это фундамент. Без него система не поймет, что именно она должна исследовать.
+
+### 2\. Библиотека Промтов (Prompt Library)
+
+Все ваши markdown-файлы с системными промтами. В PRD они упоминаются как "Stages", поэтому файлы должны быть четко сопоставлены с этими этапами:
+
+  * **Stage 0:**
+      * `0 - en Digital Product & Workflow Analyst.md`
+      * `0 - Market Intelligence Catalyst.md`
+      * `0 - Professional Domain Analyst.md`
+  * **Stage 1:**
+      * `1 - Hierarchical Query Decomposer.md`
+  * **Stage 2/3 (Search Templates):**
+      * `2 - Targeted Research Dossier Engine.md`
+      * `3 - Perplexity Research Dossier Engine.md`
+
+### 3\. Референсы реализации (Implementation References)
+
+  * **`perplexity.html.txt`**: Этот файл критически важен для понимания Capability 4.1 (Semi-Manual Mode). Он служит "живой спецификацией" того, как должен выглядеть и работать интерфейс ручного взаимодействия. AI-разработчик сможет использовать его логику парсинга (regex) как образец для Python-кода.
+
+-----
+
+### Итоговая структура пакета для AI Dev Agent:
+
+```
+/docs
+  |-- PRD.md                     # Главный документ (созданный выше)
+  |-- /data
+  |     |-- mindmap.csv          # mindmap_table-ai_and_its_applications.csv
+  |-- /prompts
+  |     |-- stage0_product.md    # 0 - en Digital Product...
+  |     |-- stage0_market.md     # 0 - Market Intelligence...
+  |     |-- stage0_domain.md     # 0 - Professional Domain...
+  |     |-- stage1_decomposer.md # 1 - Hierarchical Query...
+  |     |-- stage2_dossier.md    # 2 - Targeted Research...
+  |     |-- stage3_perplexity.md # 3 - Perplexity Research...
+  |-- /references
+        |-- manual_tool_ui.html  # perplexity.html.txt
+```
+
+Предоставив этот пакет, вы дадите AI-агенту исчерпывающий контекст: **что** делать (PRD), **с чем** работать (CSV) и **какие инструменты** использовать (Prompts & HTML Reference).

@@ -1,0 +1,281 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Project Setup and Configuration Management",
+        "description": "Initialize repository structure, set up Python environment, and implement configuration management system for API keys and settings",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "Create project structure with /src/core, /src/data, /src/engine, /src/utils directories. Set up poetry/venv for dependency management. Implement config.py to handle .env file reading for API keys, mode selection, and file paths. Use python-dotenv library for environment variable management. Create config.yaml schema for structured settings validation.",
+        "testStrategy": "Unit tests for config loading with missing/invalid .env files. Integration tests to verify API key retrieval and default value handling. Test configuration validation with malformed YAML/JSON inputs.",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Unified LLM Client Interface",
+        "description": "Implement abstraction layer for switching between Google Gemini API and OpenAI-compatible APIs",
+        "status": "pending",
+        "dependencies": [
+          1
+        ],
+        "priority": "high",
+        "details": "Create llm_client.py with base LLMClient abstract class and concrete implementations for GeminiClient and OpenAIClient. Implement factory pattern for client selection based on config. Include retry logic, rate limiting, and error handling. Support both streaming and non-streaming responses. Mock client for testing without API calls.",
+        "pseudo_code": "class LLMClient(ABC): @abstractmethod def generate(self, prompt: str) -> str: pass. class GeminiClient(LLMClient): def __init__(self, api_key): self.model = genai.GenerativeModel('gemini-pro'). def generate(self, prompt): return self.model.generate_content(prompt).text",
+        "testStrategy": "Mock tests for API calls without real network requests. Unit tests for client factory selection. Integration tests with real Gemini API using test key. Test error handling for invalid responses and rate limits.",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Mindmap CSV Parser",
+        "description": "Implement CSV parser to read and validate hierarchical knowledge base structure (Levels 1-5)",
+        "status": "pending",
+        "dependencies": [
+          1
+        ],
+        "priority": "high",
+        "details": "Create kb_loader.py to parse mindmap CSV with hierarchical structure. Validate level consistency (parent-child relationships). Handle encoding issues and malformed CSV. Return structured data as nested dictionaries or tree objects. Include data validation for required fields and level constraints.",
+        "pseudo-code": "def parse_mindmap_csv(file_path): df = pd.read_csv(file_path). validate_hierarchy(df). return build_tree_structure(df). def validate_hierarchy(df): assert all(df['Level'].diff() <= 1)",
+        "testStrategy": "Unit tests with various CSV formats (valid, invalid hierarchy, missing data). Test edge cases like empty files, circular references. Performance tests with large CSV files. Validate output structure matches expected tree format.",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Prompt Manager System",
+        "description": "Implement template management system for loading and formatting stage-specific prompts from markdown files",
+        "status": "pending",
+        "dependencies": [
+          1
+        ],
+        "priority": "medium",
+        "details": "Create prompts.py to load markdown templates from /prompts directory. Implement template engine using Jinja2 for variable substitution. Cache loaded templates for performance. Support multiple prompt variants per stage. Include prompt validation and metadata extraction.",
+        "pseudo_code": "class PromptManager: def __init__(self, prompts_dir): self.templates = self._load_templates(prompts_dir). def get_prompt(self, stage, variant=None, **kwargs): template = self.templates[stage][variant]. return template.render(**kwargs)",
+        "testStrategy": "Unit tests for template loading and rendering. Test with missing template files and invalid Jinja2 syntax. Verify variable substitution works correctly. Test caching mechanism and template reloading.",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Strategy Generation Stage (Stage 0)",
+        "description": "Implement strategist logic for selecting research branches using LLM",
+        "status": "pending",
+        "dependencies": [
+          2,
+          4
+        ],
+        "priority": "medium",
+        "details": "Create strategy generation module that uses Stage 0 prompts with LLM client. Support multiple strategist personas (Product Analyst, Market Intelligence, Domain Analyst). Implement context building from mindmap data. Include strategy validation and fallback mechanisms.",
+        "pseudo_code": "def generate_strategy(kb_node, strategist_type): prompt = prompt_manager.get_prompt('stage0', strategist_type, context=kb_node). return llm_client.generate(prompt)",
+        "testStrategy": "Integration tests with mocked LLM responses. Test different strategist types produce appropriate strategies. Validate prompt construction with various knowledge base inputs. Test error handling for LLM failures.",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Query Decomposition Stage (Stage 1)",
+        "description": "Implement hierarchical query decomposition to break strategy into research questions",
+        "status": "pending",
+        "dependencies": [
+          2,
+          4,
+          5
+        ],
+        "priority": "medium",
+        "details": "Create decomposer module using Stage 1 prompts. Transform strategy into hierarchical question list (1.1, 1.2, etc.). Validate question hierarchy and completeness. Support different decomposition strategies based on research type.",
+        "pseudo_code": "def decompose_strategy(strategy): prompt = prompt_manager.get_prompt('stage1', strategy=strategy). response = llm_client.generate(prompt). return parse_hierarchical_questions(response)",
+        "testStrategy": "Unit tests for question parsing from LLM responses. Test with various strategy inputs. Validate hierarchical structure (1.1, 1.1.1, etc.). Test edge cases like empty strategies or malformed LLM outputs.",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Semi-Manual Execution Mode",
+        "description": "Implement CLI/TUI interface for human-in-the-loop research execution",
+        "status": "pending",
+        "dependencies": [
+          6
+        ],
+        "priority": "medium",
+        "details": "Create execution.py with CLI interface for manual mode. Display formatted prompts for external search tools (Perplexity, Google Deep Research). Implement pause mechanism waiting for user input. Handle large text input/output gracefully. Include progress tracking and session management.",
+        "pseudo_code": "def manual_execution(question): prompt = format_search_prompt(question). print('\\n=== PROMPT FOR SEARCH ENGINE ==='). print(prompt). input('\\nPress Enter after copying prompt...'). result = input('Paste search results here: '). return result",
+        "testStrategy": "User acceptance testing for CLI usability. Test with large prompts and responses. Verify pause/resume functionality works correctly. Test session persistence and recovery.",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Dossier Synthesis Stage (Stage 2/3)",
+        "description": "Implement final report generation from search results using LLM synthesis",
+        "status": "pending",
+        "dependencies": [
+          2,
+          4,
+          7
+        ],
+        "priority": "medium",
+        "details": "Create synthesis module using Stage 2/3 prompts. Combine multiple search results into coherent dossier. Support different synthesis templates (Targeted Research, Perplexity Engine). Implement result validation and quality checks. Save outputs in markdown and JSON formats.",
+        "pseudo_code": "def synthesize_dossier(questions, search_results): prompt = prompt_manager.get_prompt('stage3', questions=questions, results=search_results). dossier = llm_client.generate(prompt). save_dossier(dossier, format='md')",
+        "testStrategy": "Integration tests with sample search results. Test different synthesis templates. Validate output format and structure. Test with varying amounts of input data. Verify file saving works correctly.",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Next-Step Extraction Parser",
+        "description": "Implement parser to extract 'Next-Level Questions' from generated dossiers for recursion",
+        "status": "pending",
+        "dependencies": [
+          8
+        ],
+        "priority": "medium",
+        "details": "Create parsers.py with robust extraction logic for 'Next-Level Questions' section. Handle various formatting styles from LLM outputs. Implement regex-based and semantic parsing approaches. Include validation for extracted questions and deduplication logic.",
+        "pseudo_code": "def extract_next_questions(dossier_text): patterns = [r'Next-Level Questions:(.*?)(?=\\n\\n|$)', r'Further Research:(.*?)(?=\\n\\n|$)']. for pattern in patterns: match = re.search(pattern, dossier_text, re.DOTALL). if match: return parse_questions(match.group(1)). return []",
+        "testStrategy": "Unit tests with various dossier formats. Test edge cases like missing sections or malformed questions. Validate question extraction accuracy with sample outputs. Test deduplication and filtering logic.",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Orchestrator with Recursion Queue",
+        "description": "Implement main orchestration loop with recursive research management and queue system",
+        "status": "pending",
+        "dependencies": [
+          3,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "priority": "high",
+        "details": "Create orchestrator.py as main controller implementing the full research pipeline. Manage task queue with depth limiting to prevent infinite recursion. Implement state persistence for long-running research sessions. Include progress tracking and logging. Handle errors and recovery at each stage.",
+        "pseudo-code": "class Orchestrator: def __init__(self, max_depth=3): self.queue = Queue(). self.max_depth = max_depth. def run_research(self, kb_node): while not self.queue.empty() or initial_run: stage0_result = self.generate_strategy(kb_node). questions = self.decompose_strategy(stage0_result). for q in questions: search_result = self.manual_execution(q). dossier = self.synthesize_dossier(q, search_result). next_questions = self.extract_next_questions(dossier). if current_depth < self.max_depth: self.queue.extend(next_questions)",
+        "testStrategy": "End-to-end integration tests with mocked components. Test recursion depth limiting. Verify queue management and state persistence. Test error recovery and retry logic. Performance tests with large research trees.",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Code Quality Tools and CI/CD Pipeline Setup",
+        "description": "Configure comprehensive code quality tooling including Ruff for linting/formatting, mypy for type checking, pre-commit hooks, and GitHub Actions workflow to ensure consistent code standards and automated testing.",
+        "details": "Create pyproject.toml configuration file with Ruff settings for linting and formatting rules aligned with project standards. Configure mypy with strict type checking settings and appropriate type stubs. Set up .pre-commit-config.yaml with hooks for Ruff, mypy, trailing whitespace removal, and end-of-file fixer. Create GitHub Actions workflow (.github/workflows/ci.yml) with jobs for linting, type checking, running tests on multiple Python versions, and code coverage reporting. Configure workflow to trigger on push and pull requests. Add requirements-dev.txt with development dependencies. Ensure all configurations follow established project guidelines and integrate seamlessly with existing codebase structure.",
+        "testStrategy": "Verify Ruff configuration by running on existing codebase and checking for expected linting rules. Test mypy configuration by running type checking on all modules and ensuring no false positives. Validate pre-commit hooks by installing and running them manually and through git commits. Test GitHub Actions workflow by pushing changes and verifying all jobs pass successfully. Check that formatting is consistent across the codebase and that type errors are properly caught. Verify code coverage reports are generated and uploaded correctly.",
+        "status": "in-progress",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create pyproject.toml with Ruff and mypy configuration",
+            "description": "Set up pyproject.toml file with comprehensive Ruff linting and formatting rules, plus mypy strict type checking settings",
+            "dependencies": [],
+            "details": "Create pyproject.toml in project root with [tool.ruff] section for lint rules, [tool.ruff.format] for formatting, and [tool.mypy] section with strict type checking. Include line length, import sorting, and specific rule configurations aligned with project standards",
+            "status": "pending",
+            "testStrategy": "Run Ruff and mypy on existing codebase to verify configurations work correctly and catch expected issues"
+          },
+          {
+            "id": 2,
+            "title": "Set up pre-commit hooks configuration",
+            "description": "Configure .pre-commit-config.yaml with hooks for Ruff, mypy, and code formatting utilities",
+            "dependencies": [
+              1
+            ],
+            "details": "Create .pre-commit-config.yaml with repos for Ruff (lint and format), mypy, trailing whitespace removal, and end-of-file fixer. Configure appropriate versions and ensure hooks run in correct order",
+            "status": "pending",
+            "testStrategy": "Install pre-commit hooks and test by staging files to verify all hooks execute successfully"
+          },
+          {
+            "id": 3,
+            "title": "Create requirements-dev.txt with development dependencies",
+            "description": "Add development-specific dependencies file including Ruff, mypy, pre-commit, and testing tools",
+            "dependencies": [
+              1
+            ],
+            "details": "Create requirements-dev.txt listing all development dependencies: ruff, mypy, pre-commit, pytest, pytest-cov, and any type stubs needed. Ensure versions are compatible and pinned appropriately",
+            "status": "pending",
+            "testStrategy": "Install from requirements-dev.txt and verify all tools are available and functional"
+          },
+          {
+            "id": 4,
+            "title": "Create GitHub Actions CI workflow",
+            "description": "Implement .github/workflows/ci.yml with jobs for linting, type checking, testing, and coverage reporting",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Create .github/workflows/ci.yml with jobs for linting (Ruff), type checking (mypy), running tests on multiple Python versions (3.9, 3.10, 3.11), and code coverage reporting. Configure triggers on push and pull requests to main branch",
+            "status": "pending",
+            "testStrategy": "Push changes to trigger workflow and verify all jobs pass successfully"
+          },
+          {
+            "id": 5,
+            "title": "Validate and integrate all code quality tools",
+            "description": "Test complete integration of Ruff, mypy, pre-commit hooks, and CI pipeline with existing codebase",
+            "dependencies": [
+              4
+            ],
+            "details": "Run full toolchain on existing codebase: pre-commit hooks manually, Ruff linting and formatting, mypy type checking, and ensure CI workflow passes. Fix any configuration issues or false positives. Document any code changes needed for compliance",
+            "status": "pending",
+            "testStrategy": "Execute complete workflow end-to-end and verify all quality checks pass without breaking existing functionality"
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Comprehensive Testing Infrastructure Implementation",
+        "description": "Set up complete testing framework with pytest configuration, test fixtures, utilities, and coverage reporting for the entire project",
+        "details": "Create pytest.ini configuration file with test discovery settings, markers, and plugins. Implement conftest.py with shared fixtures for LLM client mocking, CSV test data, temporary directories, and configuration overrides. Set up test utilities in tests/utils/ for common test helpers like response mocking, data generation, and assertion helpers. Configure pytest-cov for coverage reporting with minimum thresholds and HTML reports. Create test data fixtures directory with sample CSV files, mock responses, and test knowledge bases. Implement test markers for unit, integration, and slow tests. Set up CI-friendly test configuration with parallel execution support. Create test documentation and guidelines for contributors.",
+        "testStrategy": "Verify pytest configuration loads correctly and discovers all tests. Test that fixtures work independently and in combination. Validate coverage reporting generates accurate reports and meets thresholds. Run test suite with different marker combinations. Verify mock fixtures properly isolate external dependencies. Test parallel execution doesn't cause race conditions. Validate CI configuration produces consistent results.",
+        "status": "pending",
+        "dependencies": [
+          1
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Development Scripts and Utilities Implementation",
+        "description": "Create comprehensive development scripts and utilities in scripts/development/ directory for database migrations, data validation, and project maintenance tasks",
+        "details": "Implement a structured scripts/development/ directory with the following utilities:\n\n1. Database Migration Scripts:\n   - migrate.py: Handle database schema migrations with version tracking\n   - rollback.py: Support for rolling back to previous database versions\n   - seed.py: Populate database with initial test data\n   - backup.py: Automated database backup and restore utilities\n\n2. Data Validation Utilities:\n   - validate_csv.py: Validate mindmap CSV files against schema and hierarchy rules\n   - validate_config.py: Check configuration files for completeness and correctness\n   - validate_data.py: General data integrity checks across the project\n   - clean_data.py: Utilities for cleaning and normalizing data files\n\n3. Project Maintenance Scripts:\n   - setup_dev.py: Automated development environment setup\n   - clean_cache.py: Clear temporary files, caches, and build artifacts\n   - health_check.py: System health monitoring and dependency verification\n   - update_deps.py: Update project dependencies and check compatibility\n\n4. Utility Framework:\n   - Create base script class with common functionality (logging, error handling)\n   - Implement CLI argument parsing with consistent interface\n   - Add configuration file support for script parameters\n   - Include progress indicators and colored output for better UX\n\nAll scripts should follow the project's coding standards, include comprehensive error handling, and support both interactive and automated execution modes.",
+        "testStrategy": "Test each script individually and as part of integrated workflows:\n\n1. Unit Tests:\n   - Test each script's core functionality with mocked dependencies\n   - Verify CLI argument parsing and validation\n   - Test error handling and edge cases\n\n2. Integration Tests:\n   - Test migration scripts with actual database (SQLite for testing)\n   - Validate data validation scripts with sample CSV files\n   - Test maintenance scripts in a controlled environment\n\n3. End-to-End Tests:\n   - Verify complete development setup workflow\n   - Test migration rollback scenarios\n   - Validate data cleaning and validation pipelines\n\n4. Manual Testing:\n   - Verify script usability and output formatting\n   - Test interactive modes and user prompts\n   - Validate help documentation and usage examples\n\n5. Performance Tests:\n   - Test scripts with large datasets\n   - Measure execution time and resource usage\n   - Verify memory efficiency for data processing tasks",
+        "status": "pending",
+        "dependencies": [
+          1,
+          3
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Project Structure Setup with src/ Layout and Absolute Imports",
+        "description": "Establish proper Python project structure with src/ layout, configure absolute imports, and organize packages following Python best practices and project guidelines.",
+        "details": "Create a well-organized project structure with src/ directory layout to ensure clean separation between source code and project files. Implement absolute imports configuration to improve code readability and maintainability. Structure packages logically based on functionality and domain boundaries.\n\nImplementation steps:\n1. Create src/ directory as the root source package directory\n2. Organize packages under src/ following domain-driven design:\n   - src/core/: Core business logic and domain models\n   - src/services/: Application services and business logic\n   - src/adapters/: External system integrations (LLM clients, file handlers)\n   - src/infrastructure/: Database, configuration, and external dependencies\n   - src/utils/: Shared utilities and helper functions\n3. Configure pyproject.toml for absolute imports:\n   - Set up [tool.setuptools.packages.find] with where = ['src']\n   - Configure [tool.setuptools.package-dir] for proper package discovery\n4. Update all import statements throughout the codebase to use absolute imports\n5. Create __init__.py files with proper package exports and version information\n6. Establish clear module boundaries and dependency directions\n7. Add type hints and module-level documentation\n8. Ensure proper separation of concerns between packages",
+        "testStrategy": "Verify project structure integrity and import functionality:\n1. Test that all modules can be imported using absolute imports from project root\n2. Run pytest with the new structure to ensure all tests still pass\n3. Verify package discovery works correctly with pip install -e .\n4. Test circular import detection using tools like pyflakes\n5. Validate that the structure follows Python packaging standards\n6. Test that the project can be built and distributed with the new structure\n7. Verify IDE integration works properly with the new layout\n8. Run mypy and Ruff to ensure type checking and linting work with absolute imports",
+        "status": "pending",
+        "dependencies": [
+          1,
+          3
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Comprehensive Documentation Implementation",
+        "description": "Create complete project documentation including README.md, API documentation, and architecture documentation following established project standards",
+        "details": "Implement comprehensive documentation suite covering all aspects of the research automation system:\n\n1. README.md Documentation:\n   - Project overview and purpose\n   - Installation and setup instructions\n   - Quick start guide with examples\n   - Configuration requirements (.env setup)\n   - Usage examples for different modes (automatic, semi-manual)\n   - Contributing guidelines\n   - License and credits\n\n2. API Documentation:\n   - Auto-generated API reference using Sphinx or MkDocs\n   - Document all public modules and classes\n   - Function signatures with parameter descriptions\n   - Return value specifications\n   - Usage examples for key functions\n   - Error handling documentation\n\n3. Architecture Documentation:\n   - System overview diagram\n   - Component interaction flow\n   - Stage-based pipeline documentation (Stage 0-3)\n   - Data flow diagrams\n   - Configuration management architecture\n   - Extension points and plugin system\n\n4. Developer Documentation:\n   - Code structure and organization\n   - Development environment setup\n   - Testing guidelines and strategies\n   - Debugging and troubleshooting guide\n   - Performance considerations\n\n5. User Documentation:\n   - User guide with step-by-step workflows\n   - Configuration options reference\n   - Common use cases and examples\n   - FAQ section\n\nImplementation approach:\n- Use Markdown for README and user docs\n- Implement Sphinx with autodoc for API documentation\n- Create Mermaid diagrams for architecture visualization\n- Establish documentation build pipeline\n- Ensure all documentation is version-controlled and maintainable",
+        "testStrategy": "Validate documentation completeness and accuracy through multiple approaches:\n\n1. Documentation Build Tests:\n   - Verify README renders correctly on GitHub\n   - Test Sphinx documentation builds without errors\n   - Validate all internal links and references\n   - Check code examples compile and run\n\n2. Content Accuracy Tests:\n   - Cross-reference API docs with actual code signatures\n   - Verify installation instructions work on clean systems\n   - Test configuration examples with actual .env files\n   - Validate workflow examples produce expected results\n\n3. User Acceptance Testing:\n   - Have new developers follow setup instructions\n   - Test documentation clarity with target users\n   - Verify troubleshooting guides address common issues\n   - Check examples work with current codebase\n\n4. Automated Documentation Checks:\n   - Implement CI pipeline to validate documentation builds\n   - Check for broken links and missing references\n   - Verify code examples stay synchronized with implementation\n   - Monitor documentation coverage metrics",
+        "status": "pending",
+        "dependencies": [
+          1,
+          4,
+          10
+        ],
+        "priority": "medium",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-11-09T11:35:04.265Z",
+      "updated": "2025-11-09T11:52:32.589Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
