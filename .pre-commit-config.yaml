@@ -1,11 +1,11 @@
 repos:
-  # Ruff - linting and formatting
+  # Ruff - formatting and linting
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.6
     hooks:
+      - id: ruff-format
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
-      - id: ruff-format
 
   # Type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -34,4 +34,4 @@ repos:
     hooks:
       - id: bandit
         args: [-c, pyproject.toml]
-        additional_dependencies: ["bandit[toml]"]
+        additional_dependencies: ["bandit[toml]", "pbr"]

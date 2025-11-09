@@ -43,6 +43,10 @@ dev = [
     { name = "bandit" },
     { name = "pre-commit" },
     { name = "pytest-cov" },
+    { name = "types-pyyaml" },
+    { name = "types-requests" },
+    { name = "types-setuptools" },
+    { name = "types-toml" },
 ]
 
 [package.metadata]
@@ -75,6 +79,10 @@ dev = [
     { name = "bandit", specifier = ">=1.8.6" },
     { name = "pre-commit", specifier = ">=4.4.0" },
     { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.20250915" },
+    { name = "types-requests", specifier = ">=2.32.4.20250913" },
+    { name = "types-setuptools", specifier = ">=80.9.0.20250822" },
+    { name = "types-toml", specifier = ">=0.10.8.20240310" },
 ]
 
 [[package]]
@@ -1713,6 +1721,45 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e0/a8/949edebe3a82774c1ec34f637f5dd82d1cf22c25e963b7d63771083bbee5/twine-6.2.0.tar.gz", hash = "sha256:e5ed0d2fd70c9959770dce51c8f39c8945c574e18173a7b81802dab51b4b75cf", size = 172262, upload-time = "2025-09-04T15:43:17.255Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3a/7a/882d99539b19b1490cac5d77c67338d126e4122c8276bf640e411650c830/twine-6.2.0-py3-none-any.whl", hash = "sha256:418ebf08ccda9a8caaebe414433b0ba5e25eb5e4a927667122fbe8f829f985d8", size = 42727, upload-time = "2025-09-04T15:43:15.994Z" },
+]
+
+[[package]]
+name = "types-pyyaml"
+version = "6.0.12.20250915"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7e/69/3c51b36d04da19b92f9e815be12753125bd8bc247ba0470a982e6979e71c/types_pyyaml-6.0.12.20250915.tar.gz", hash = "sha256:0f8b54a528c303f0e6f7165687dd33fafa81c807fcac23f632b63aa624ced1d3", size = 17522, upload-time = "2025-09-15T03:01:00.728Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bd/e0/1eed384f02555dde685fff1a1ac805c1c7dcb6dd019c916fe659b1c1f9ec/types_pyyaml-6.0.12.20250915-py3-none-any.whl", hash = "sha256:e7d4d9e064e89a3b3cae120b4990cd370874d2bf12fa5f46c97018dd5d3c9ab6", size = 20338, upload-time = "2025-09-15T03:00:59.218Z" },
+]
+
+[[package]]
+name = "types-requests"
+version = "2.32.4.20250913"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/36/27/489922f4505975b11de2b5ad07b4fe1dca0bca9be81a703f26c5f3acfce5/types_requests-2.32.4.20250913.tar.gz", hash = "sha256:abd6d4f9ce3a9383f269775a9835a4c24e5cd6b9f647d64f88aa4613c33def5d", size = 23113, upload-time = "2025-09-13T02:40:02.309Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/20/9a227ea57c1285986c4cf78400d0a91615d25b24e257fd9e2969606bdfae/types_requests-2.32.4.20250913-py3-none-any.whl", hash = "sha256:78c9c1fffebbe0fa487a418e0fa5252017e9c60d1a2da394077f1780f655d7e1", size = 20658, upload-time = "2025-09-13T02:40:01.115Z" },
+]
+
+[[package]]
+name = "types-setuptools"
+version = "80.9.0.20250822"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/19/bd/1e5f949b7cb740c9f0feaac430e301b8f1c5f11a81e26324299ea671a237/types_setuptools-80.9.0.20250822.tar.gz", hash = "sha256:070ea7716968ec67a84c7f7768d9952ff24d28b65b6594797a464f1b3066f965", size = 41296, upload-time = "2025-08-22T03:02:08.771Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b6/2d/475bf15c1cdc172e7a0d665b6e373ebfb1e9bf734d3f2f543d668b07a142/types_setuptools-80.9.0.20250822-py3-none-any.whl", hash = "sha256:53bf881cb9d7e46ed12c76ef76c0aaf28cfe6211d3fab12e0b83620b1a8642c3", size = 63179, upload-time = "2025-08-22T03:02:07.643Z" },
+]
+
+[[package]]
+name = "types-toml"
+version = "0.10.8.20240310"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/86/47/3e4c75042792bff8e90d7991aa5c51812cc668828cc6cce711e97f63a607/types-toml-0.10.8.20240310.tar.gz", hash = "sha256:3d41501302972436a6b8b239c850b26689657e25281b48ff0ec06345b8830331", size = 4392, upload-time = "2024-03-10T02:18:37.518Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/da/a2/d32ab58c0b216912638b140ab2170ee4b8644067c293b170e19fba340ccc/types_toml-0.10.8.20240310-py3-none-any.whl", hash = "sha256:627b47775d25fa29977d9c70dc0cbab3f314f32c8d8d0c012f2ef5de7aaec05d", size = 4777, upload-time = "2024-03-10T02:18:36.568Z" },
 ]
 
 [[package]]

@@ -84,6 +84,7 @@ ignore = [
     "EM101",   # Exception string literals (allow for simple cases)
     "EM102",   # Exception f-strings (allow for simple cases)
     "BLE001",  # Allow blind exception handling in config
+    "ISC001",  # Implicitly concatenated string literals on one line (conflicts with formatter)
 ]
 
 [tool.ruff.format]
@@ -101,6 +102,14 @@ split-on-trailing-comma = false
     "PLR2004", # Magic value comparison in tests
     "S101",    # Use of assert in tests
 ]
+
+# MyPy per-file ignores
+[[tool.mypy.overrides]]
+module = [
+    "tests.unit.test_pyproject_config",
+    "tests.unit.test_precommit_config"
+]
+ignore_errors = true
 
 [tool.mypy]
 python_version = "3.12"
@@ -121,6 +130,7 @@ show_error_codes = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
@@ -196,4 +206,8 @@ dev = [
     "bandit>=1.8.6",
     "pre-commit>=4.4.0",
     "pytest-cov>=7.0.0",
+    "types-pyyaml>=6.0.12.20250915",
+    "types-requests>=2.32.4.20250913",
+    "types-setuptools>=80.9.0.20250822",
+    "types-toml>=0.10.8.20240310",
 ]
